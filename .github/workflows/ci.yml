@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest
+      - name: Run test suite (offline)
+        run: |
+          python -m pytest tests/ -q
+      - name: Demo audit smoke test
+        run: |
+          python -m viperstrike audit --demo --output reports
+          test -f reports/audit_report.sarif
+          python -m viperstrike oracle --demo --yes --output reports
+          test -f reports/oracle_demo.json

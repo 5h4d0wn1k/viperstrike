@@ -1,0 +1,464 @@
+{
+  "target": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server",
+  "files_scanned": 1,
+  "lines_scanned": 157,
+  "findings": [
+    {
+      "rule_id": "MCP-001",
+      "rule_name": "Shell / exec invocation in tool handler",
+      "message": "Tool handler 'shell_exec' invokes `os.system` — arbitrary shell command execution is possible via user-controlled arguments.",
+      "severity": "error",
+      "severity_label": "critical",
+      "confidence": "high",
+      "cwe": "CWE-78",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 55,
+          "column": 0
+        }
+      ],
+      "evidence": "return os.system(command)",
+      "fix_suggestion": "Replace `os.system` with a parameterized subprocess call (no shell=True) and validate/whitelist allowed commands."
+    },
+    {
+      "rule_id": "MCP-002",
+      "rule_name": "Unsafe subprocess with shell=True or string interpolation",
+      "message": "Function 'run_command' uses `subprocess.run` with shell=True — command injection risk.",
+      "severity": "error",
+      "severity_label": "info",
+      "confidence": "high",
+      "cwe": "CWE-78",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 62,
+          "column": 0
+        }
+      ],
+      "evidence": "proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)\n    return proc.stdout",
+      "fix_suggestion": "Pass a list of arguments to subprocess with shell=False and validate each argument."
+    },
+    {
+      "rule_id": "MCP-006",
+      "rule_name": "eval / exec / compile on user input",
+      "message": "Tool handler 'evaluate' passes input to `eval` — arbitrary Python code execution is possible.",
+      "severity": "error",
+      "severity_label": "critical",
+      "confidence": "high",
+      "cwe": "CWE-95",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 97,
+          "column": 0
+        }
+      ],
+      "evidence": "return str(eval(expression))",
+      "fix_suggestion": "Never eval/exec/compile inputs derived from tool arguments. Use an AST-based parser or a safe interpreter instead."
+    },
+    {
+      "rule_id": "MCP-012",
+      "rule_name": "Unsafe deserialization (pickle / yaml.load)",
+      "message": "Function 'load_blob' deserializes data via `pickle.loads` in a tool handler — unsafe deserialization can achieve remote code execution (CWE-502).",
+      "severity": "error",
+      "severity_label": "critical",
+      "confidence": "high",
+      "cwe": "CWE-502",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 123,
+          "column": 0
+        }
+      ],
+      "evidence": "obj = pickle.loads(bytes.fromhex(data))\n    return str(obj)",
+      "fix_suggestion": "Never unpickle untrusted input. Use JSON or a safe loader and validate the data shape before use."
+    },
+    {
+      "rule_id": "MCP-008",
+      "rule_name": "Missing input-schema constraints",
+      "message": "Tool handler 'write_file' declares params ['contents', 'filename'] but performs no schema, type, or allowlist validation on them.",
+      "severity": "note",
+      "severity_label": "medium",
+      "confidence": "low",
+      "cwe": "CWE-20",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 68,
+          "column": 0
+        }
+      ],
+      "evidence": "def write_file(filename: str, contents: str) -> str:\n    \"\"\"Write user content to a user-supplied file path (INSE....CURE).\"\"\"\n    with open(filename, \"w\") as fh:",
+      "fix_suggestion": "Declare strict input schemas (enum, min/max, format) in the MCP tool registration and validate arguments against the schema before use."
+    },
+    {
+      "rule_id": "MCP-008",
+      "rule_name": "Missing input-schema constraints",
+      "message": "Tool handler 'store_credentials' declares params ['api_key', 'password', 'username'] but performs no schema, type, or allowlist validation on them.",
+      "severity": "note",
+      "severity_label": "medium",
+      "confidence": "low",
+      "cwe": "CWE-20",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 102,
+          "column": 0
+        }
+      ],
+      "evidence": "def store_credentials(username: str, password: str, api_key: str) -> str:\n    \"\"\"Persist a credential pair. Logs them. (INSE....CURE).\"\"\"\n    logger.info(\"storing creds for %s with password=%s api_key=%s\",",
+      "fix_suggestion": "Declare strict input schemas (enum, min/max, format) in the MCP tool registration and validate arguments against the schema before use."
+    },
+    {
+      "rule_id": "MCP-008",
+      "rule_name": "Missing input-schema constraints",
+      "message": "Tool handler 'delete_records' declares params ['record_id', 'table'] but performs no schema, type, or allowlist validation on them.",
+      "severity": "note",
+      "severity_label": "medium",
+      "confidence": "low",
+      "cwe": "CWE-20",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 129,
+          "column": 0
+        }
+      ],
+      "evidence": "def delete_records(table: str, record_id: int) -> str:\n    \"\"\"Delete a database record. NO authentication check (INSE....CURE).\"\"\"\n    import sqlite3",
+      "fix_suggestion": "Declare strict input schemas (enum, min/max, format) in the MCP tool registration and validate arguments against the schema before use."
+    },
+    {
+      "rule_id": "MCP-008",
+      "rule_name": "Missing input-schema constraints",
+      "message": "Tool handler 'transfer_to_internal_network' declares params ['amount', 'target'] but performs no schema, type, or allowlist validation on them.",
+      "severity": "note",
+      "severity_label": "medium",
+      "confidence": "low",
+      "cwe": "CWE-20",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 140,
+          "column": 0
+        }
+      ],
+      "evidence": "def transfer_to_internal_network(target: str, amount: int) -> str:\n    \"\"\"Trigger a network transfer. Enabled for everyone by default.\"\"\"\n    return f\"transfer {amount} to {target}\"",
+      "fix_suggestion": "Declare strict input schemas (enum, min/max, format) in the MCP tool registration and validate arguments against the schema before use."
+    },
+    {
+      "rule_id": "MCP-008",
+      "rule_name": "Missing input-schema constraints",
+      "message": "Tool handler 'get_weather' declares params ['city', 'units'] but performs no schema, type, or allowlist validation on them.",
+      "severity": "note",
+      "severity_label": "medium",
+      "confidence": "low",
+      "cwe": "CWE-20",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 147,
+          "column": 0
+        }
+      ],
+      "evidence": "def get_weather(city: str, units: str) -> str:\n    \"\"\"Look up weather. No validation on either param.\"\"\"\n    return f\"weather for {city} in {units}\"",
+      "fix_suggestion": "Declare strict input schemas (enum, min/max, format) in the MCP tool registration and validate arguments against the schema before use."
+    },
+    {
+      "rule_id": "MCP-010",
+      "rule_name": "Dangerous default — tool enabled by default when sensitive",
+      "message": "Tool 'transfer_to_internal_network' performs sensitive operations and is registered with enabled_by_default=True — exposed to every connected client without an explicit opt-in.",
+      "severity": "note",
+      "severity_label": "medium",
+      "confidence": "low",
+      "cwe": "CWE-1188",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 139,
+          "column": 0
+        }
+      ],
+      "evidence": "@server.tool(enabled_by_default=True, dangerous=True)\ndef transfer_to_internal_network(target: str, amount: int) -> str:\n    \"\"\"Trigger a network transfer. Enabled for everyone by default.\"\"\"",
+      "fix_suggestion": "Register sensitive tools disabled by default and require explicit capability opt-in / approval."
+    },
+    {
+      "rule_id": "MCP-003",
+      "rule_name": "Arbitrary file write via handler",
+      "message": "Tool handler 'write_file' writes a file at a path derived from a user-supplied argument — arbitrary file overwrite (CWE-73/CWE-22).",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "medium",
+      "cwe": "CWE-22",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 70,
+          "column": 0
+        }
+      ],
+      "evidence": "with open(filename, \"w\") as fh:\n        fh.write(contents)\n    return f\"wrote {filename}\"",
+      "fix_suggestion": "Resolve the path against a dedicated data directory and reject any path containing '..' or absolute components."
+    },
+    {
+      "rule_id": "MCP-004",
+      "rule_name": "Path traversal in read handler",
+      "message": "Read handler 'read_log' opens a path built from a user-supplied argument without traversal protection.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "medium",
+      "cwe": "CWE-22",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 79,
+          "column": 0
+        }
+      ],
+      "evidence": "path = os.path.join(LOGS_DIR, logname)\n    with open(path, \"r\") as fh:\n        return fh.read()",
+      "fix_suggestion": "Validate the user path with an allowlist and os.path.realpath() containment check before reading."
+    },
+    {
+      "rule_id": "MCP-005",
+      "rule_name": "Fetch / SSRF to arbitrary URLs",
+      "message": "Function 'fetch_url' fetches a URL derived from a user-supplied argument without a host allowlist — server-side request forgery (SSRF).",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "medium",
+      "cwe": "CWE-918",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 89,
+          "column": 0
+        }
+      ],
+      "evidence": "resp = requests.get(url, timeout=5)\n    return resp.text[:4000]",
+      "fix_suggestion": "Pin the destination host/port with an explicit allowlist and reject internal ranges (127.0.0.0/8, 169.254.169.254, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, metadataservers)."
+    },
+    {
+      "rule_id": "MCP-007",
+      "rule_name": "Secrets in tool args logged / echoed",
+      "message": "Tool handler 'store_credentials' logs or echoes sensitive argument(s) ['api_key', 'password'] via `logger.info` without redaction — secret disclosure in logs/output.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "medium",
+      "cwe": "CWE-532",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 104,
+          "column": 0
+        }
+      ],
+      "evidence": "logger.info(\"storing creds for %s with password=%s api_key=%s\",\n                username, password, api_key)\n    return {\"username\": username, \"password\": password, \"api_key\": api_key}",
+      "fix_suggestion": "Never log credential parameters. Redact before printing and never include secrets in MCP tool results."
+    },
+    {
+      "rule_id": "MCP-009",
+      "rule_name": "Auth bypass — no auth check on sensitive tool",
+      "message": "Sensitive tool 'shell_exec' performs file/shell/network operations with no authentication or capability attestation in its handler — any connected MCP client can invoke it.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "low",
+      "cwe": "CWE-306",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 53,
+          "column": 0
+        }
+      ],
+      "evidence": "def shell_exec(command: str) -> str:\n    \"\"\"Run a shell command (INSE....CURE by design).\"\"\"\n    return os.system(command)",
+      "fix_suggestion": "Add an authorization gate at the start of the handler (session check, capability attestation, role claim) and fail closed by default."
+    },
+    {
+      "rule_id": "MCP-009",
+      "rule_name": "Auth bypass — no auth check on sensitive tool",
+      "message": "Sensitive tool 'run_command' performs file/shell/network operations with no authentication or capability attestation in its handler — any connected MCP client can invoke it.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "low",
+      "cwe": "CWE-306",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 60,
+          "column": 0
+        }
+      ],
+      "evidence": "def run_command(cmd: str) -> str:\n    \"\"\"Run any command via the shell (INSE....CURE by design).\"\"\"\n    proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)",
+      "fix_suggestion": "Add an authorization gate at the start of the handler (session check, capability attestation, role claim) and fail closed by default."
+    },
+    {
+      "rule_id": "MCP-009",
+      "rule_name": "Auth bypass — no auth check on sensitive tool",
+      "message": "Sensitive tool 'write_file' performs file/shell/network operations with no authentication or capability attestation in its handler — any connected MCP client can invoke it.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "low",
+      "cwe": "CWE-306",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 68,
+          "column": 0
+        }
+      ],
+      "evidence": "def write_file(filename: str, contents: str) -> str:\n    \"\"\"Write user content to a user-supplied file path (INSE....CURE).\"\"\"\n    with open(filename, \"w\") as fh:",
+      "fix_suggestion": "Add an authorization gate at the start of the handler (session check, capability attestation, role claim) and fail closed by default."
+    },
+    {
+      "rule_id": "MCP-009",
+      "rule_name": "Auth bypass — no auth check on sensitive tool",
+      "message": "Sensitive tool 'read_log' performs file/shell/network operations with no authentication or capability attestation in its handler — any connected MCP client can invoke it.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "low",
+      "cwe": "CWE-306",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 77,
+          "column": 0
+        }
+      ],
+      "evidence": "def read_log(logname: str) -> str:\n    \"\"\"Read a log file. Log names are joined without traversal checks.\"\"\"\n    path = os.path.join(LOGS_DIR, logname)",
+      "fix_suggestion": "Add an authorization gate at the start of the handler (session check, capability attestation, role claim) and fail closed by default."
+    },
+    {
+      "rule_id": "MCP-009",
+      "rule_name": "Auth bypass — no auth check on sensitive tool",
+      "message": "Sensitive tool 'fetch_url' performs file/shell/network operations with no authentication or capability attestation in its handler — any connected MCP client can invoke it.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "low",
+      "cwe": "CWE-306",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 86,
+          "column": 0
+        }
+      ],
+      "evidence": "def fetch_url(url: str) -> str:\n    \"\"\"Fetch an arbitrary URL the caller supplies (INSE....CURE).\"\"\"\n    import requests",
+      "fix_suggestion": "Add an authorization gate at the start of the handler (session check, capability attestation, role claim) and fail closed by default."
+    },
+    {
+      "rule_id": "MCP-009",
+      "rule_name": "Auth bypass — no auth check on sensitive tool",
+      "message": "Sensitive tool 'evaluate' performs file/shell/network operations with no authentication or capability attestation in its handler — any connected MCP client can invoke it.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "low",
+      "cwe": "CWE-306",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 95,
+          "column": 0
+        }
+      ],
+      "evidence": "def evaluate(expression: str) -> str:\n    \"\"\"Evaluate a caller-supplied Python expression (INSE....CURE).\"\"\"\n    return str(eval(expression))",
+      "fix_suggestion": "Add an authorization gate at the start of the handler (session check, capability attestation, role claim) and fail closed by default."
+    },
+    {
+      "rule_id": "MCP-009",
+      "rule_name": "Auth bypass — no auth check on sensitive tool",
+      "message": "Sensitive tool 'search_users' performs file/shell/network operations with no authentication or capability attestation in its handler — any connected MCP client can invoke it.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "low",
+      "cwe": "CWE-306",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 111,
+          "column": 0
+        }
+      ],
+      "evidence": "def search_users(name: str) -> str:\n    \"\"\"Search users. Query built by string interpolation (INSE....CURE).\"\"\"\n    conn = sqlite3.connect(\"users.db\")",
+      "fix_suggestion": "Add an authorization gate at the start of the handler (session check, capability attestation, role claim) and fail closed by default."
+    },
+    {
+      "rule_id": "MCP-009",
+      "rule_name": "Auth bypass — no auth check on sensitive tool",
+      "message": "Sensitive tool 'load_blob' performs file/shell/network operations with no authentication or capability attestation in its handler — any connected MCP client can invoke it.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "low",
+      "cwe": "CWE-306",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 121,
+          "column": 0
+        }
+      ],
+      "evidence": "def load_blob(data: str) -> str:\n    \"\"\"Deserialize a caller-supplied pickle blob (INSE....CURE).\"\"\"\n    obj = pickle.loads(bytes.fromhex(data))",
+      "fix_suggestion": "Add an authorization gate at the start of the handler (session check, capability attestation, role claim) and fail closed by default."
+    },
+    {
+      "rule_id": "MCP-009",
+      "rule_name": "Auth bypass — no auth check on sensitive tool",
+      "message": "Sensitive tool 'transfer_to_internal_network' performs file/shell/network operations with no authentication or capability attestation in its handler — any connected MCP client can invoke it.",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "low",
+      "cwe": "CWE-306",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 140,
+          "column": 0
+        }
+      ],
+      "evidence": "def transfer_to_internal_network(target: str, amount: int) -> str:\n    \"\"\"Trigger a network transfer. Enabled for everyone by default.\"\"\"\n    return f\"transfer {amount} to {target}\"",
+      "fix_suggestion": "Add an authorization gate at the start of the handler (session check, capability attestation, role claim) and fail closed by default."
+    },
+    {
+      "rule_id": "MCP-011",
+      "rule_name": "SQL concatenation in database handler",
+      "message": "Handler 'search_users' executes a SQL query built by string interpolation from user input — SQL injection (CWE-89).",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "high",
+      "cwe": "CWE-89",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 115,
+          "column": 0
+        }
+      ],
+      "evidence": "rows = conn.execute(query).fetchall()\n    return json.dumps(rows)",
+      "fix_suggestion": "Use parameterized queries / placeholders exclusively and treat every tool argument as untrusted."
+    },
+    {
+      "rule_id": "MCP-011",
+      "rule_name": "SQL concatenation in database handler",
+      "message": "Handler 'delete_records' executes a SQL query built by string interpolation from user input — SQL injection (CWE-89).",
+      "severity": "warning",
+      "severity_label": "high",
+      "confidence": "high",
+      "cwe": "CWE-89",
+      "locations": [
+        {
+          "file": "/media/cynik/Pendrive/Intell-system/22-hardware-hacking/flagships/viperstrike/examples/sample_mcp_server/sample_server.py",
+          "line": 133,
+          "column": 0
+        }
+      ],
+      "evidence": "conn.execute(f\"DELETE FROM {table} WHERE id = {record_id}\")\n    conn.commit()\n    return f\"deleted {record_id}\"",
+      "fix_suggestion": "Use parameterized queries / placeholders exclusively and treat every tool argument as untrusted."
+    }
+  ],
+  "errors": [],
+  "scan_time_ms": 129.7,
+  "summary": {
+    "error": 4,
+    "note": 6,
+    "warning": 15
+  }
+}
