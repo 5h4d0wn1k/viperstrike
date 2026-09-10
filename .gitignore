@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# venv / tooling
+.venv/
+venv/
+.env/
+.tox/
+.mypy_cache/
+.pytest_cache/
+
+# viperstrike generated reports
+reports/*.json
+reports/*.md
+reports/*.sarif
+
+# distribution artifacts
+dist/
+build/
+*.egg-info/
+
+# editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "viperstrike"
+version = "1.0.0"
+description = "MCP (Model Context Protocol) Server Vulnerability Auditor — static analysis + runtime oracle for agentic-AI attack surfaces"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "5h4d0wn1k", email = "5h4d0wn1k@users.noreply.github.com" }]
+keywords = ["mcp", "security", "audit", "vulnerability", "agentic-ai", "sarif"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+
+[project.scripts]
+viperstrike = "viperstrike.cli:main"
+
+[tool.setuptools]
+packages = ["viperstrike", "viperstrike.parsers", "viperstrike.detectors", "viperstrike.reporters"]
+
+[tool.setuptools.package-data]
+viperstrike = ["examples/**/*.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
