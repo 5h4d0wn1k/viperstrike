@@ -194,13 +194,38 @@ def _load_result(path: Path) -> ScanResult:
     from viperstrike.core import Finding, Location
 
     for fd in data.get("findings", []):
+        locations_data = fd.get("locations", [])
+        if not locations_data:
+            raise ValueError(
+                f"Finding '{fd.get('rule_id', 'UNKNOWN')}' has no locations; "
+                "each finding must have at least one location."
+            )
+        locations = []
+        for loc_data in locations_data:
+            if not isinstance(loc_data, dict):
+                raise ValueError(
+                    f"Location for finding '{fd.get('rule_id', 'UNKNOWN')}' "
+                    "must be a dict with 'file' (str), 'line' (int), and optional 'column' (int)."
+                )
+            loc_file = loc_data.get("file")
+            loc_line = loc_data.get("line")
+            if not isinstance(loc_file, str) or not isinstance(loc_line, int):
+                raise ValueError(
+                    f"Location for finding '{fd.get('rule_id', 'UNKNOWN')}' "
+                    "must have 'file' (str) and 'line' (int)."
+                )
+            locations.append(Location(
+                file=loc_file,
+                line=loc_line,
+                column=loc_data.get("column", 0),
+            ))
         f = Finding(
             rule_id=fd.get("rule_id", "UNKNOWN"),
             rule_name=fd.get("rule_name", "Unknown"),
             message=fd.get("message", ""),
             severity=fd.get("severity", "note"),
             confidence=fd.get("confidence", "low"),
-            locations=[Location(**l) for l in fd.get("locations", [])],
+            locations=locations,
             cwe=fd.get("cwe"),
             evidence=fd.get("evidence", ""),
             fix_suggestion=fd.get("fix_suggestion", ""),
@@ -217,7 +242,11 @@ def _convert_cmd(args: argparse.Namespace) -> int:
         print("viperstrike: --target must point to an existing JSON result "
               "file for the report/sarif subcommand.", file=sys.stderr)
         return 2
-    result = _load_result(Path(target))
+    try:
+        result = _load_result(Path(target))
+    except (json.JSONDecodeError, ValueError, TypeError, KeyError) as exc:
+        print(f"viperstrike: failed to load result file: {exc}", file=sys.stderr)
+        return 2
 
     if args.command == "sarif":
         output_dir.mkdir(parents=True, exist_ok=True)
