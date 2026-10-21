@@ -149,3 +149,22 @@ def test_rules_roundtrip_tags():
 def test_all_rule_ids_are_strings_in_expected_set():
     expected_ids = {f"MCP-{i:03d}" for i in range(1, 13)}
     assert set(RULES.keys()) == expected_ids
+
+def test_sensitive_param_matches_qualified_names():
+    # the naming convention real code uses: origin-qualified credentials
+    for name in ("db_password", "user_password", "service_api_key",
+                 "client_secret", "secret_key", "auth_token", "x_token"):
+        assert is_sensitive_param(name), name
+
+
+def test_sensitive_param_matches_compound_joins():
+    assert is_sensitive_param("service_api_key")  # api_key is one joined token
+    assert is_sensitive_param("my_access_token")  # access_token join
+    assert is_sensitive_param("DB_PASSWORD")      # case-insensitive after split
+
+
+def test_sensitive_param_still_ignores_unrelated_names():
+    # token-boundary matching, not substring: these must not match
+    for name in ("author", "secretary", "authenticate", "username",
+                 "keyspace", "tokenize"):
+        assert not is_sensitive_param(name), name
