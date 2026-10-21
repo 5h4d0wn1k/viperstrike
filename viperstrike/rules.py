@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
@@ -208,4 +209,16 @@ def is_sensitive_tool(tool_name: str) -> bool:
 
 
 def is_sensitive_param(param_name: str) -> bool:
-    return param_name.lower() in SENSITIVE_PARAM_NAMES
+    name = param_name.lower()
+    if name in SENSITIVE_PARAM_NAMES:
+        return True
+    tokens = re.split(r"[^a-z0-9]+", name)
+    parts = set(tokens)
+    if parts & SENSITIVE_PARAM_NAMES:
+        return True
+    # qualified names join two dictionary words into one token
+    # (service_api_key -> "api_key"), so check adjacent-token joins too
+    for a, b in zip(tokens, tokens[1:]):
+        if f"{a}_{b}" in SENSITIVE_PARAM_NAMES:
+            return True
+    return False
