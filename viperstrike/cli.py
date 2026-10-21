@@ -145,6 +145,12 @@ def _write_reports(result: ScanResult, output_dir: Path,
 def cmd_audit(args: argparse.Namespace) -> int:
     output_dir = Path(getattr(args, "output", DEFAULT_OUTPUT_DIR))
     target = Path(args.target) if getattr(args, "target", None) else DEMO_TARGET
+    if not target.exists():
+        # A mistyped --target is the most common user error: give it the same
+        # clean diagnostic and exit code the report/sarif subcommand already
+        # uses, instead of letting scan_tree's FileNotFoundError traceback.
+        print(f"viperstrike: --target does not exist: {target}", file=sys.stderr)
+        return 2
     result = _run_audit(target, output_dir, bool(getattr(args, "verbose", False)))
     _write_reports(result, output_dir)
     _print_summary(result)

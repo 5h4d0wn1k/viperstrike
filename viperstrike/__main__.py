@@ -2,4 +2,6 @@
 from viperstrike.cli import main
 
 if __name__ == "__main__":
-    main()
+    # Propagate main()'s exit code like the console script does, so
+    # `python -m viperstrike` fails with the same exit code as `viperstrike`.
+    raise SystemExit(main())

@@ -132,6 +132,27 @@ def test_main_sarif_without_target_returns_2(tmp_path, capsys):
     assert rc == 2
 
 
+def test_main_audit_missing_target_returns_2(tmp_path, capsys):
+    rc = main(["audit", "--target", str(tmp_path / "no" / "such" / "dir")])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "--target does not exist:" in err
+    assert "Traceback" not in err
+
+
+def test_invoke_as_module_audit_missing_target_exits_2(tmp_path):
+    r = subprocess.run(
+        [sys.executable, "-m", "viperstrike", "audit",
+         "--target", str(tmp_path / "no" / "such" / "dir"),
+         "--output", str(tmp_path)],
+        capture_output=True, text=True, cwd=REPO_ROOT,
+    )
+    assert r.returncode == 2
+    assert "--target does not exist:" in r.stderr
+    assert "Traceback" not in r.stderr
+    assert "Traceback" not in r.stdout
+
+
 def test_invoke_as_module_demo(tmp_path):
     r = subprocess.run(
         [sys.executable, "-m", "viperstrike", "audit", "--demo",
